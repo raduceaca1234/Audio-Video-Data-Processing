@@ -12,9 +12,9 @@ public class Encoder {
     private List<String> file_header;
     private int width, height;
     private final String file;
-    private double[][] Y;
-    private double[][] U;
-    private double[][] V;
+    private double[][] y_matrix;
+    private double[][] u_matrix;
+    private double[][] v_matrix;
     private List<List<Integer>> listOfIndexes8x8;
 
     public Encoder(String file) {
@@ -24,7 +24,8 @@ public class Encoder {
 
     private void initializeYUV() {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
-            int headerNumberOfLines = 0, val = 0, i = 0, j = 0, R = 0, G = 0, B = 0;
+            int headerNumberOfLines = 0, i = 0, j = 0, R = 0, G = 0, B = 0;
+            String val = "r";
             String line;
             file_header = new ArrayList<>();
             while ((line = bufferedReader.readLine()) != null) {
@@ -32,31 +33,31 @@ public class Encoder {
                     if (headerNumberOfLines == 1 && !line.startsWith("#")) {
                         width = Integer.parseInt(line.split(" ")[0]);
                         height = Integer.parseInt(line.split(" ")[1]);
-                        Y = new double[height][width];
-                        U = new double[height][width];
-                        V = new double[height][width];
+                        y_matrix = new double[height][width];
+                        u_matrix = new double[height][width];
+                        v_matrix = new double[height][width];
                     }
                     if (!line.startsWith("#"))
                         headerNumberOfLines++;
                     file_header.add(line);
                 } else {
-                    if (val == 0) {
+                    if (val.equals("r")) {
                         R = Integer.parseInt(line);
-                        val++;
-                    } else if (val == 1) {
+                        val="g";
+                    } else if (val.equals("g")) {
                         G = Integer.parseInt(line);
-                        val++;
-                    } else if (val == 2) {
+                        val="b";
+                    } else {
                         B = Integer.parseInt(line);
-                        Y[i][j] = 0.299 * R + 0.587 * G + 0.144 * B;
-                        U[i][j] = 128 - 0.169 * R - 0.331 * G + 0.5 * B;
-                        V[i][j] = 128 + 0.5 * R - 0.419 * G - 0.081 * B;
+                        y_matrix[i][j] = 0.299 * R + 0.587 * G + 0.144 * B;
+                        u_matrix[i][j] = 128 - 0.169 * R - 0.331 * G + 0.5 * B;
+                        v_matrix[i][j] = 128 + 0.5 * R - 0.419 * G - 0.081 * B;
                         j++;
                         if (j == width) {
                             i++;
                             j = 0;
                         }
-                        val = 0;
+                        val = "r";
                     }
                 }
             }
@@ -89,9 +90,9 @@ public class Encoder {
         for (int i = i1, k = 0; i <= i2 - 1; i += 2, k++)
             for (int j = j1, l = 0; j <= j2 - 1; j += 2, l++)
                 if (component.equals("U")) {
-                    matrix[k][l] = (U[i][j] + U[i + 1][j] + U[i][j + 1] + U[i + 1][j + 1]) / 4;
+                    matrix[k][l] = (u_matrix[i][j] + u_matrix[i + 1][j] + u_matrix[i][j + 1] + u_matrix[i + 1][j + 1]) / 4;
                 } else {
-                    matrix[k][l] = (V[i][j] + V[i + 1][j] + V[i][j + 1] + V[i + 1][j + 1]) / 4;
+                    matrix[k][l] = (v_matrix[i][j] + v_matrix[i + 1][j] + v_matrix[i][j + 1] + v_matrix[i + 1][j + 1]) / 4;
                 }
         return matrix;
     }
@@ -107,7 +108,7 @@ public class Encoder {
                     bufferedWriter.newLine();
                     for (i = matrix.get(0); i <= matrix.get(2); i++) {
                         for (j = matrix.get(1); j <= matrix.get(3); j++) {
-                            bufferedWriter.write(formatter.format(Y[i][j]));
+                            bufferedWriter.write(formatter.format(y_matrix[i][j]));
                             bufferedWriter.write(" ");
                         }
                         bufferedWriter.newLine();
@@ -170,28 +171,28 @@ public class Encoder {
         return file;
     }
 
-    public double[][] getY() {
-        return Y;
+    public double[][] getY_matrix() {
+        return y_matrix;
     }
 
-    public void setY(double[][] y) {
-        Y = y;
+    public void setY_matrix(double[][] y_matrix) {
+        this.y_matrix = y_matrix;
     }
 
-    public double[][] getU() {
-        return U;
+    public double[][] getU_matrix() {
+        return u_matrix;
     }
 
-    public void setU(double[][] u) {
-        U = u;
+    public void setU_matrix(double[][] u_matrix) {
+        this.u_matrix = u_matrix;
     }
 
-    public double[][] getV() {
-        return V;
+    public double[][] getV_matrix() {
+        return v_matrix;
     }
 
-    public void setV(double[][] v) {
-        V = v;
+    public void setV_matrix(double[][] v_matrix) {
+        this.v_matrix = v_matrix;
     }
 
     public List<List<Integer>> getListOfIndexes8x8() {
