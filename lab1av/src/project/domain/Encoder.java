@@ -49,9 +49,9 @@ public class Encoder {
                         val="b";
                     } else {
                         B = Integer.parseInt(line);
-                        y_matrix[i][j] = 0.299 * R + 0.587 * G + 0.144 * B;
-                        u_matrix[i][j] = 128 - 0.169 * R - 0.331 * G + 0.5 * B;
-                        v_matrix[i][j] = 128 + 0.5 * R - 0.419 * G - 0.081 * B;
+                        y_matrix[i][j] = 0.299 * R + 0.587 * G + 0.114 * B;
+                        u_matrix[i][j] = 128 - 0.1687 * R - 0.3312 * G + 0.5 * B;
+                        v_matrix[i][j] = 128 + 0.5 * R - 0.4186 * G - 0.0813 * B;
                         j++;
                         if (j == width) {
                             i++;
@@ -72,7 +72,7 @@ public class Encoder {
         listOfIndexes8x8 = new ArrayList<>();
         int i1 = 0, j1 = 0, i2 = 7, j2 = 7;
         while (i2 < height) {
-            if (j2 == width - 1) {
+            if (j2 > width) {
                 j1 = 0;
                 j2 = 7;
                 i1 += 8;
@@ -87,8 +87,8 @@ public class Encoder {
 
     private double[][] calculate4x4Matrix(int i1, int j1, int i2, int j2, String component) {
         double[][] matrix = new double[4][4];
-        for (int i = i1, k = 0; i <= i2 - 1; i += 2, k++)
-            for (int j = j1, l = 0; j <= j2 - 1; j += 2, l++)
+        for (int i = i1, k = 0; i <= i2; i += 2, k++)
+            for (int j = j1, l = 0; j <= j2; j += 2, l++)
                 if (component.equals("U")) {
                     matrix[k][l] = (u_matrix[i][j] + u_matrix[i + 1][j] + u_matrix[i][j + 1] + u_matrix[i + 1][j + 1]) / 4;
                 } else {
@@ -128,8 +128,8 @@ public class Encoder {
                         matrix4X4 = calculate4x4Matrix(matrix.get(0), matrix.get(1), matrix.get(2), matrix.get(3),
                                 "V");
                     }
-                    for (i = 0; i <= 3; i++) {
-                        for (j = 0; j <= 3; j++) {
+                    for (i = 0; i < 4; i++) {
+                        for (j = 0; j < 4; j++) {
                             bufferedWriter.write(formatter.format(matrix4X4[i][j]));
                             bufferedWriter.write(" ");
                         }

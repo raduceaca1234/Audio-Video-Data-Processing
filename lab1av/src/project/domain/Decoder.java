@@ -63,7 +63,7 @@ public class Decoder {
                     } else {
                         for (i = i1 * 2, k = 0; i <= i2 * 2 + 1; i += 2, k++) {
                             lineVal = lines.get(k).split(" ");
-                            for (j = j1 * 2, l = 0; j <= j2 * 2 + 1; j += 2, l++) {
+                            for (j = j1 * 2, l = 0; j <= j2 * 2+ 1; j += 2, l++) {
                                 if (component.equals("U")) {
                                     U[i][j] = Double.parseDouble(lineVal[l]);
                                     U[i + 1][j] = Double.parseDouble(lineVal[l]);
