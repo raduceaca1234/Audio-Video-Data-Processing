@@ -85,6 +85,7 @@ public class Encoder {
         }
     }
 
+
     private double[][] calculate4x4Matrix(int i1, int j1, int i2, int j2, String component) {
         double[][] matrix = new double[4][4];
         for (int i = i1, k = 0; i <= i2; i += 2, k++)
@@ -96,6 +97,8 @@ public class Encoder {
                 }
         return matrix;
     }
+
+
 
     public void writeInFile(String filename, String component) {
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(filename))) {
