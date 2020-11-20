@@ -18,7 +18,9 @@ public class Encoder {
     public double[][] matrix_of_U;
     public double[][] matrix_of_V;
     public double[][] matrix_of_DCT;
-    public double[][] Q_matrix = {{6, 4, 4, 6, 10, 16, 20, 24}, {5, 5, 6, 8, 10, 23, 24, 22}, {6, 5, 6, 10, 16, 23, 28, 22}, {6, 7, 9, 12, 20, 35, 32, 25}, {7, 9, 15, 22, 27, 44, 41, 31}, {10, 14, 22, 26, 32, 42, 45, 37}, {20, 26, 31, 35, 41, 48, 48, 40}, {29, 37, 38, 39, 45, 40, 41, 40}};
+    public double[][] Q_matrix = {
+            {6, 4, 4, 6, 10, 16, 20, 24},
+            {5, 5, 6, 8, 10, 23, 24, 22}, {6, 5, 6, 10, 16, 23, 28, 22}, {6, 7, 9, 12, 20, 35, 32, 25}, {7, 9, 15, 22, 27, 44, 41, 31}, {10, 14, 22, 26, 32, 42, 45, 37}, {20, 26, 31, 35, 41, 48, 48, 40}, {29, 37, 38, 39, 45, 40, 41, 40}};
 
     public Encoder(String file) {
         this.file = file;
@@ -87,23 +89,29 @@ public class Encoder {
         }
     }
 
-    private double[][] create_4x4_matrix(int i1, int j1, int i2, int j2, String component) {
+    private double[][] create_4x4_matrixU(int i1, int j1, int i2, int j2) {
+        return transform(i1, j1, i2, j2, matrix_of_U);
+    }
+
+    private double[][] create_4x4_matrixV(int i1, int j1, int i2, int j2) {
+        return transform(i1, j1, i2, j2, matrix_of_V);
+    }
+
+    private double[][] transform(int i1, int j1, int i2, int j2, double[][] matrix_of_u) {
         double[][] matrix = new double[4][4];
         for (int i = i1, k = 0; i <= i2 - 1; i += 2, k++)
             for (int j = j1, l = 0; j <= j2 - 1; j += 2, l++)
-                if (component.equals("U")) {
-                    matrix[k][l] = (matrix_of_U[i][j] + matrix_of_U[i + 1][j] + matrix_of_U[i][j + 1] + matrix_of_U[i + 1][j + 1]) / 4;
-                } else {
-                    matrix[k][l] = (matrix_of_V[i][j] + matrix_of_V[i + 1][j] + matrix_of_V[i][j + 1] + matrix_of_V[i + 1][j + 1]) / 4;
-                }
+                matrix[k][l] = (matrix_of_u[i][j] + matrix_of_u[i + 1][j] + matrix_of_u[i][j + 1] + matrix_of_u[i + 1][j + 1]) / 4;
+
         return matrix;
     }
 
-    public void write_in_files(String filename, String component) {
+
+    public void write_in_filesY(String filename) {
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(filename))) {
             int i, j;
             NumberFormat formatter = new DecimalFormat("#0.000");
-            if (component.equals("Y")) {
+
                 for (List<Integer> matrix : indexesList) {
                     bufferedWriter.write(matrix.get(0) + " " + matrix.get(1) + " " + matrix.get(2) + " "
                             + matrix.get(3));
@@ -117,35 +125,70 @@ public class Encoder {
                     }
                     bufferedWriter.newLine();
                 }
-            } else {
-                for (List<Integer> matrix : indexesList) {
-                    double[][] matrix4X4;
-                    bufferedWriter.write(matrix.get(0) / 2 + " " + matrix.get(1) / 2 + " " +
-                            matrix.get(2) / 2 + " " + matrix.get(3) / 2);
-                    bufferedWriter.newLine();
-                    if (component.equals("U")) {
-                        matrix4X4 = create_4x4_matrix(matrix.get(0), matrix.get(1), matrix.get(2), matrix.get(3),
-                                "U");
-                    } else {
-                        matrix4X4 = create_4x4_matrix(matrix.get(0), matrix.get(1), matrix.get(2), matrix.get(3),
-                                "V");
-                    }
-                    for (i = 0; i <= 3; i++) {
-                        for (j = 0; j <= 3; j++) {
-                            bufferedWriter.write(formatter.format(matrix4X4[i][j]));
-                            bufferedWriter.write(" ");
-                        }
-                        bufferedWriter.newLine();
-                    }
-                    bufferedWriter.newLine();
-                }
-            }
+
         } catch (IOException ex) {
             ex.printStackTrace();
         }
     }
 
-    private void transformFrom4x4To8x8(String filename, String matrix_type) {
+    public void write_in_filesU(String filename) {
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(filename))) {
+            NumberFormat formatter = new DecimalFormat("#0.000");
+
+            for (List<Integer> matrix : indexesList) {
+                double[][] matrix4X4;
+                bufferedWriter.write(matrix.get(0) / 2 + " " + matrix.get(1) / 2 + " " +
+                        matrix.get(2) / 2 + " " + matrix.get(3) / 2);
+                bufferedWriter.newLine();
+                matrix4X4 = create_4x4_matrixU(matrix.get(0), matrix.get(1), matrix.get(2), matrix.get(3));
+                writeElements4X4(bufferedWriter, formatter, matrix4X4);
+            }
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void write_in_filesV(String filename) {
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(filename))) {
+            NumberFormat formatter = new DecimalFormat("#0.000");
+
+            for (List<Integer> matrix : indexesList) {
+                double[][] matrix4X4;
+                bufferedWriter.write(matrix.get(0) / 2 + " " + matrix.get(1) / 2 + " " +
+                        matrix.get(2) / 2 + " " + matrix.get(3) / 2);
+                bufferedWriter.newLine();
+                matrix4X4 = create_4x4_matrixV(matrix.get(0), matrix.get(1), matrix.get(2), matrix.get(3));
+                writeElements4X4(bufferedWriter, formatter, matrix4X4);
+            }
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void writeElements4X4(BufferedWriter bufferedWriter, NumberFormat formatter, double[][] matrix4X4) throws IOException {
+        int i;
+        int j;
+        for (i = 0; i <= 3; i++) {
+            for (j = 0; j <= 3; j++) {
+                bufferedWriter.write(formatter.format(matrix4X4[i][j]));
+                bufferedWriter.write(" ");
+            }
+            bufferedWriter.newLine();
+        }
+        bufferedWriter.newLine();
+    }
+
+    private void transformFrom4x4To8x8U() {
+        readFromFile("data/U.txt", matrix_of_U);
+    }
+
+    private void transformFrom4x4To8x8V() {
+        readFromFile("data/V.txt", matrix_of_V);
+    }
+
+    private void readFromFile(String filename, double[][] matrix_of_u) {
         int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
         boolean ok = true;
         String line;
@@ -168,17 +211,10 @@ public class Encoder {
                     for (i = i1 * 2, k = 0; i <= i2 * 2 + 1; i += 2, k++) {
                         lineVal = lines.get(k).split(" ");
                         for (j = j1 * 2, l = 0; j <= j2 * 2 + 1; j += 2, l++) {
-                            if (matrix_type.equals("U")) {
-                                matrix_of_U[i][j] = Double.parseDouble(lineVal[l]);
-                                matrix_of_U[i + 1][j] = Double.parseDouble(lineVal[l]);
-                                matrix_of_U[i][j + 1] = Double.parseDouble(lineVal[l]);
-                                matrix_of_U[i + 1][j + 1] = Double.parseDouble(lineVal[l]);
-                            } else {
-                                matrix_of_V[i][j] = Double.parseDouble(lineVal[l]);
-                                matrix_of_V[i + 1][j] = Double.parseDouble(lineVal[l]);
-                                matrix_of_V[i][j + 1] = Double.parseDouble(lineVal[l]);
-                                matrix_of_V[i + 1][j + 1] = Double.parseDouble(lineVal[l]);
-                            }
+                            matrix_of_u[i][j] = Double.parseDouble(lineVal[l]);
+                            matrix_of_u[i + 1][j] = Double.parseDouble(lineVal[l]);
+                            matrix_of_u[i][j + 1] = Double.parseDouble(lineVal[l]);
+                            matrix_of_u[i + 1][j + 1] = Double.parseDouble(lineVal[l]);
                         }
                     }
 
@@ -201,7 +237,19 @@ public class Encoder {
         }
     }
 
-    private void applyFormulaAndQuantizationPhase(int i1, int j1, int i2, int j2, String filename, String matrix_type) throws IOException {
+    private void applyFormulaAndQuantizationPhaseY(int i1, int j1, int i2, int j2) throws IOException {
+        forumulaAndQuantization(i1, j1, i2, j2, "data/YDCT.txt", matrix_of_Y);
+    }
+
+    private void applyFormulaAndQuantizationPhaseU(int i1, int j1, int i2, int j2) throws IOException {
+        forumulaAndQuantization(i1, j1, i2, j2, "data/UDCT.txt", matrix_of_U);
+    }
+
+    private void applyFormulaAndQuantizationPhaseV(int i1, int j1, int i2, int j2) throws IOException {
+        forumulaAndQuantization(i1, j1, i2, j2, "data/VDCT.txt", matrix_of_V);
+    }
+
+    private void forumulaAndQuantization(int i1, int j1, int i2, int j2, String filename, double[][] matrix_of_y) throws IOException {
         matrix_of_DCT = new double[8][8];
         int u, v;
         double alpha1, alpha2;
@@ -211,15 +259,7 @@ public class Encoder {
                 for (int x=0; x <= 7; x++) {
                     for (int y=0; y <= 7;  y++) {
                         double multiplication_result = cos((((2 * x) + 1) * u * PI) / 16) * cos((((2 * y) + 1) * v * PI) / 16);
-                        if (matrix_type.equals("Y_matrix")) {
-                            sum += matrix_of_Y[i1+x][j1+y] * multiplication_result;
-                        }
-                        if (matrix_type.equals("U_matrix")) {
-                            sum += matrix_of_U[i1+x][j1+y] * multiplication_result;
-                        }
-                        if (matrix_type.equals("V_matrix")) {
-                            sum += matrix_of_V[i1+x][j1+y] * multiplication_result;
-                        }
+                        sum += matrix_of_y[i1+x][j1+y] * multiplication_result;
                     }
                 }
                 alpha1 = 0; alpha2 = 0;
@@ -257,19 +297,15 @@ public class Encoder {
         }
     }
 
-
     void generateDCTBlocks() {
-        transformFrom4x4To8x8("data/V.txt", "V");
-        transformFrom4x4To8x8("data/U.txt", "U");
+        transformFrom4x4To8x8V();
+        transformFrom4x4To8x8U();
         substract128();
         for (List<Integer> indexes : indexesList) {
             try {
-                applyFormulaAndQuantizationPhase(indexes.get(0), indexes.get(1), indexes.get(2), indexes.get(3),
-                        "data/YDCT.txt", "Y_matrix");
-                applyFormulaAndQuantizationPhase(indexes.get(0), indexes.get(1), indexes.get(2), indexes.get(3),
-                        "data/UDCT.txt", "U_matrix");
-                applyFormulaAndQuantizationPhase(indexes.get(0), indexes.get(1), indexes.get(2), indexes.get(3),
-                        "data/VDCT.txt", "V_matrix");
+                applyFormulaAndQuantizationPhaseY(indexes.get(0), indexes.get(1), indexes.get(2), indexes.get(3));
+                applyFormulaAndQuantizationPhaseU(indexes.get(0), indexes.get(1), indexes.get(2), indexes.get(3));
+                applyFormulaAndQuantizationPhaseV(indexes.get(0), indexes.get(1), indexes.get(2), indexes.get(3));
             } catch (IOException ex) {
                 ex.printStackTrace();
             }

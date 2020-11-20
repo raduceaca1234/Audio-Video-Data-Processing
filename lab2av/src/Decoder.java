@@ -33,9 +33,9 @@ public class Decoder {
         this.VFinal = new double[height][width];
         this.Q_matrix = Q_matrix;
         this.indexesList = indexesList;
-        populateYUVMatrices(yFile, "Y_matrix");
-        populateYUVMatrices(uFile, "U_matrix");
-        populateYUVMatrices(vFile, "V_matrix");
+        populateYMatrices(yFile);
+        populateUMatrices(uFile);
+        populateVMatrices(vFile);
         this.DCT = DCT;
     }
 
@@ -57,7 +57,7 @@ public class Decoder {
         }
     }
 
-    private void readFromFilesAndApplyDeQunatization(int i1, int j1, int i2, int j2, List<String> lines, double[][] matrix) {
+    private void readFromFilesAndApplyDeQuantization(int i1, int j1, int i2, int j2, List<String> lines, double[][] matrix) {
         int i, a, k, j, b, l;
         String[] lineVal;
         for (i = i1,a=0, k = 0; i <= i2; i++, k++, a++) {
@@ -68,7 +68,19 @@ public class Decoder {
         }
     }
 
-    private void populateYUVMatrices(String filename, String matrix_type) {
+    private void populateYMatrices(String filename) {
+        populate(filename, matrix_of_Y);
+    }
+
+    private void populateUMatrices(String filename) {
+        populate(filename, matrix_of_U);
+    }
+
+    private void populateVMatrices(String filename) {
+        populate(filename, matrix_of_V);
+    }
+
+    private void populate(String filename, double[][] matrix_of_y) {
         int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
         boolean ok = true;
         String line;
@@ -87,15 +99,7 @@ public class Decoder {
                     while (!(line = bufferedReader.readLine()).equals("")) {
                         lines.add(line);
                     }
-                    if (matrix_type.equals("Y_matrix")) {
-                        readFromFilesAndApplyDeQunatization(i1, j1, i2, j2, lines, matrix_of_Y);
-                    }
-                    if (matrix_type.equals("U_matrix")) {
-                        readFromFilesAndApplyDeQunatization(i1, j1, i2, j2, lines, matrix_of_U);
-                    }
-                    if (matrix_type.equals("V_matrix")) {
-                        readFromFilesAndApplyDeQunatization(i1, j1, i2, j2, lines, matrix_of_V);
-                    }
+                    readFromFilesAndApplyDeQuantization(i1, j1, i2, j2, lines, matrix_of_y);
                     ok = true;
                 }
             }
@@ -104,45 +108,58 @@ public class Decoder {
         }
     }
 
+    private void inverseDCTForY(int i1, int j1) {
+        populateFinalMatrix(i1, j1, matrix_of_Y, YFinal);
+    }
 
-    private void inverseDCT(int i1, int j1) {
-        int u, v;
-        double sum1, sum2, sum3;
+    private void inverseDCTForU(int i1, int j1) {
+        populateFinalMatrix(i1, j1, matrix_of_U, UFinal);
+    }
+
+    private void inverseDCTForV(int i1, int j1) {
+        populateFinalMatrix(i1, j1, matrix_of_V, VFinal);
+    }
+
+    private void populateFinalMatrix(int i1, int j1, double[][] matrix_of_v, double[][] vFinal) {
+        double sum;
         for (int x=0; x <= 7;  x++) {
             for (int y = 0; y <= 7; y++) {
-                sum1 = 0; sum2 = 0; sum3 = 0;
-                for (u = 0; u <=7; u++) {
-                    for (v = 0; v <=7; v++) {
-                        double alp1 = 0, alp2 = 0;
-                        if(u==0)
-                            alp1 = 1.0 / sqrt(2);
-                        else if(u>0)
-                            alp1 = 1.0;
-                        if(v==0)
-                            alp2 = 1.0 / sqrt(2);
-                        else if(v>0)
-                            alp2 = 1.0;
-                        double cos = cos((((2 * x) + 1) * u * PI) / 16) * cos((((2 * y) + 1) * v * PI) / 16);
-                        sum1 += matrix_of_Y[i1+u][j1+v] * alp1 * alp2 * cos;
-                        sum2 += matrix_of_U[i1+u][j1+v] * alp1 * alp2 * cos;
-                        sum3 += matrix_of_V[i1+u][j1+v] * alp1 * alp2 * cos;
-                    }
-                }
-                System.out.println(sum1);
-                sum1 = 0.25 * sum1;
-                System.out.println(sum1);
-                sum2 = 0.25 * sum2;
-                sum3 = 0.25 * sum3;
-                YFinal[i1+x][j1+y] = sum1;
-                UFinal[i1+x][j1+y] = sum2;
-                VFinal[i1+x][j1+y] = sum3;
+                sum = computeSum(i1, j1, x, y, matrix_of_v);
+                sum = 0.25 * sum;
+                vFinal[i1+x][j1+y] = sum;
             }
         }
     }
 
+    private double computeSum(int i1, int j1, int x, int y, double[][] matrix_of_y) {
+        double sum;
+        int u;
+        int v;
+        sum = 0;
+        for (u = 0; u <=7; u++) {
+            for (v = 0; v <=7; v++) {
+                double alp1 = 0, alp2 = 0;
+                if(u==0)
+                    alp1 = 1.0 / sqrt(2);
+                else if(u>0)
+                    alp1 = 1.0;
+                if(v==0)
+                    alp2 = 1.0 / sqrt(2);
+                else if(v>0)
+                    alp2 = 1.0;
+                double cos = cos((((2 * x) + 1) * u * PI) / 16) * cos((((2 * y) + 1) * v * PI) / 16);
+                sum += matrix_of_y[i1+u][j1+v] * alp1 * alp2 * cos;
+            }
+        }
+        return sum;
+    }
+
+
     public void generateFinalImage() {
         for (List<Integer> matrix : indexesList) {
-            inverseDCT(matrix.get(0), matrix.get(1));
+            inverseDCTForY(matrix.get(0), matrix.get(1));
+            inverseDCTForU(matrix.get(0), matrix.get(1));
+            inverseDCTForV(matrix.get(0), matrix.get(1));
         }
         adding128();
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(resultingFile))) {
